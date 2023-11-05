@@ -24,11 +24,35 @@ class BuildData(torch.utils.data.Dataset):
         image = nib.load(image_path).get_fdata()
 
         features = np.asarray([self.df.loc[index,'age'],self.df.loc[index,'psa']]).reshape(1,2)
-        print(features.shape)
         label = np.asarray(self.df.loc[index,'psa'])
 
 
         return self.DataTransformer(image), self.DataTransformer(features), label
+    
+
+class DataBuilder:
+
+    def __init__(self, data_path, splitratio) -> None:
+        self.df = pd.read_csv(data_path)
+        self.splitratio = splitratio
+
+    def prepare(self):
+        seed = torch.initial_seed()
+        
+        trainlen = np.floor(self.df.shape[0]*self.splitratio).astype(int)
+        trainidx = np.random.choice(range(df.shape[0]),trainlen, replace=False)
+        traindata = self.df[self.df.index.isin(trainidx)].reset_index(drop=True)
+        valdata = self.df[~self.df.index.isin(trainidx)].reset_index(drop=True)
+
+        datasets = {"train":[], "validate":[]}
+        for i in range(traindata.shape[0]):
+            datasets['train'].append(BuildData(traindata)[i])
+            
+        for i in range(valdata.shape[0]):
+            datasets['validate'].append(BuildData(valdata)[i])
+            
+        return datasets
+
     
 
 
@@ -40,8 +64,8 @@ if __name__ == '__main__':
 
     df = pd.read_csv('data_processed.csv')
 
-    for i in range(3):
-        img, features, label = BuildData(df, True, [224, 224])[i]
-        print(img.shape)
-        print(features)
-        print(label)
+    databuilder = DataBuilder('data_processed.csv', 0.8)
+
+    datasets = databuilder.prepare()
+
+    print(len(datasets['train'][0]))
