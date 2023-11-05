@@ -2,3 +2,4 @@
 /Data
 **/*.zip
 **/.ipynb_checkpoints
+**/*.csv
