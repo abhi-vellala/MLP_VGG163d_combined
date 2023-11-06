@@ -7,13 +7,16 @@ import nibabel as nib
 from PIL import Image
 import pandas as pd
 from pathlib import Path
+from sklearn.preprocessing import LabelEncoder
 
 
 class BuildData(torch.utils.data.Dataset):
 
-    def __init__(self, df: pd.DataFrame):
+    def __init__(self, df: pd.DataFrame, target_depth):
         self.df = df
         self.DataTransformer = transforms.Compose([transforms.ToTensor()])
+        self.target_depth = target_depth
+        self.label_encoder = LabelEncoder().fit(list(self.df['grade'].unique()))
 
     def __len__(self):
         return self.df.shape[0]
@@ -21,11 +24,28 @@ class BuildData(torch.utils.data.Dataset):
     def __getitem__(self, index):
         image_path = Path(self.df.loc[index, 'image_path'])
         image = nib.load(image_path).get_fdata()
+        curr_depth = image.shape[2]
+        # adding padding(images with 0s) to unify the depth of all the images across the data
+        if curr_depth < self.target_depth:
+            image = self.image_preprocessor(image, curr_depth)
+        # Expand the dimensions to make it match (1,depth, h, w)
+        # image = image[np.newaxis, :,:,:]
+        print(torch.unsqueeze(self.DataTransformer(image),0).shape)
         features = np.asarray([self.df.loc[index,'age'],self.df.loc[index,'psa']]).reshape(1,2)
-        label = np.asarray(self.df.loc[index,'psa'])
+
+        
+        label = self.label_encoder.transform([self.df.loc[index,'grade']])[0]
+
+        return torch.unsqueeze(self.DataTransformer(image),0).float(), self.DataTransformer(features), label
+    
+    def image_preprocessor(self, image, curr_depth):
+
+        padding = self.target_depth - curr_depth
+        image_padded = np.pad(image, ((0, 0), (0, 0), (0, padding)), mode='constant')
+
+        return image_padded
 
 
-        return self.DataTransformer(image), self.DataTransformer(features), label
     
 
 class DataBuilder:
@@ -33,6 +53,7 @@ class DataBuilder:
     def __init__(self, data_path, splitratio) -> None:
         self.df = pd.read_csv(data_path)
         self.splitratio = splitratio
+        self.target_depth = max(self.df['nimages'])
 
     def prepare(self):
         seed = torch.initial_seed()
@@ -43,10 +64,10 @@ class DataBuilder:
 
         datasets = {"train":[], "validate":[]}
         for i in range(traindata.shape[0]):
-            datasets['train'].append(BuildData(traindata)[i])
+            datasets['train'].append(BuildData(traindata, self.target_depth)[i])
             
         for i in range(valdata.shape[0]):
-            datasets['validate'].append(BuildData(valdata)[i])
+            datasets['validate'].append(BuildData(valdata, self.target_depth)[i])
             
         return datasets
 

@@ -123,7 +123,7 @@ class MLPVGG163DAdjusted(nn.Module):
         for i, layer in enumerate(self.convnet):
             print(i)
             x = layer(x)
-            print(f"{layer}: {x.shape}")
+            # print(f"{layer}: {x.shape}")
 
         x = torch.flatten(x,1)
         x = x.reshape(x.size(0), -1)
@@ -131,17 +131,17 @@ class MLPVGG163DAdjusted(nn.Module):
         for i, layer in enumerate(self.densenet):
             print(i)
             x = layer(x)
-            print(f"{layer}: {x.shape}")
+            # print(f"{layer}: {x.shape}")
 
 
         for i, layer in enumerate(self.mlpfeatures):
             print(i)
             y = layer(y)
-            print(f'{layer}: {y.shape}')
+            # print(f'{layer}: {y.shape}')
 
         xcombined = torch.cat((x,y),1)
 
-        print(f'Xcombined shape: {xcombined.shape}')
+        # print(f'Xcombined shape: {xcombined.shape}')
 
         for i,layer in enumerate(self.mlpcombined):
             print(i)

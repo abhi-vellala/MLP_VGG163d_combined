@@ -18,8 +18,9 @@ print(f"Shape of validation data: {len(datasets['validate'])}")
 
 BATCH_SIZE = 4
 trainloader = torch.utils.data.DataLoader(datasets['train'], batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
-valloader = torch.utils.data.DataLoader(datasets['validate'], batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+valloader = torch.utils.data.DataLoader(datasets['validate'], batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 print("dataloader successful!")
+
 
 # Define Model
 
@@ -39,9 +40,13 @@ EPOCHS = 10
 
 model.train(True)
 for idx, (image, features, label) in enumerate(trainloader):
-        image = image.to(device)
-        features = features.to(device)
-        label = label.to(device)
+        if idx < 1:
+            image = image.to(device)
+            features = features.to(device)
+            label = label.to(device)
+            print(image.shape)
+            print(features, features.shape)
+            print(label, label.shape)
 
         output = model(image, features)
         loss = criterion(output, label)
