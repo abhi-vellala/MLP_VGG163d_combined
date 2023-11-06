@@ -12,7 +12,6 @@ from pathlib import Path
 class BuildData(torch.utils.data.Dataset):
 
     def __init__(self, df: pd.DataFrame):
-
         self.df = df
         self.DataTransformer = transforms.Compose([transforms.ToTensor()])
 
@@ -22,7 +21,6 @@ class BuildData(torch.utils.data.Dataset):
     def __getitem__(self, index):
         image_path = Path(self.df.loc[index, 'image_path'])
         image = nib.load(image_path).get_fdata()
-
         features = np.asarray([self.df.loc[index,'age'],self.df.loc[index,'psa']]).reshape(1,2)
         label = np.asarray(self.df.loc[index,'psa'])
 
@@ -38,9 +36,8 @@ class DataBuilder:
 
     def prepare(self):
         seed = torch.initial_seed()
-        
         trainlen = np.floor(self.df.shape[0]*self.splitratio).astype(int)
-        trainidx = np.random.choice(range(df.shape[0]),trainlen, replace=False)
+        trainidx = np.random.choice(range(self.df.shape[0]),trainlen, replace=False)
         traindata = self.df[self.df.index.isin(trainidx)].reset_index(drop=True)
         valdata = self.df[~self.df.index.isin(trainidx)].reset_index(drop=True)
 
