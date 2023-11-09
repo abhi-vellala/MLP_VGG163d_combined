@@ -16,7 +16,7 @@ print(f"Shape of validation data: {len(datasets['validate'])}")
 
 # Make data tensors
 
-BATCH_SIZE = 4
+BATCH_SIZE = 2
 trainloader = torch.utils.data.DataLoader(datasets['train'], batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 valloader = torch.utils.data.DataLoader(datasets['validate'], batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 print("dataloader successful!")
@@ -24,7 +24,7 @@ print("dataloader successful!")
 
 # Define Model
 
-with open('vgg16_adj_configs.json') as config_file:
+with open('vgg16_adj_configs1.json') as config_file:
         model_configs = json.load(config_file)
 model_save_path = "./model_weights/"    
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -41,12 +41,13 @@ EPOCHS = 10
 model.train(True)
 for idx, (image, features, label) in enumerate(trainloader):
         if idx < 1:
-            image = image.to(device)
-            features = features.to(device)
-            label = label.to(device)
-            print(image.shape)
-            print(features, features.shape)
-            print(label, label.shape)
+               with torch.no_grad():
+                image = image.to(device)
+                features = features.to(device)
+                label = label.to(device)
+        #     print(image.shape)
+        #     print(features, features.shape)
+        #     print(label, label.shape)
 
         output = model(image, features)
         loss = criterion(output, label)

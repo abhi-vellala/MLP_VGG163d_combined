@@ -14,6 +14,7 @@ class BuildData(torch.utils.data.Dataset):
 
     def __init__(self, df: pd.DataFrame, target_depth):
         self.df = df
+        # self.ImageTransformer = transforms.Compose([transforms.Resize((20,224,224))])
         self.DataTransformer = transforms.Compose([transforms.ToTensor()])
         self.target_depth = target_depth
         self.label_encoder = LabelEncoder().fit(list(self.df['grade'].unique()))
@@ -26,17 +27,25 @@ class BuildData(torch.utils.data.Dataset):
         image = nib.load(image_path).get_fdata()
         curr_depth = image.shape[2]
         # adding padding(images with 0s) to unify the depth of all the images across the data
-        if curr_depth < self.target_depth:
-            image = self.image_preprocessor(image, curr_depth)
+        # if curr_depth < self.target_depth:
+        #     image = self.image_preprocessor(image, curr_depth)
         # Expand the dimensions to make it match (1,depth, h, w)
         # image = image[np.newaxis, :,:,:]
-        print(torch.unsqueeze(self.DataTransformer(image),0).shape)
+        # print(torch.unsqueeze(self.DataTransformer(image),0).shape)
+        image = torch.unsqueeze(self.DataTransformer(image),0).float()
+        # image = self.DataTransformer(image)
+        # image= self.DataTransformer(image)
+        # print(image.size())
+        image = torch.nn.functional.interpolate(image.unsqueeze(0), size=(224, 224, 20), mode='trilinear', align_corners=False)
+        # print(image.size())
+        image = torch.reshape(image, (1,20,224,224))
+        # print(image.size())
         features = np.asarray([self.df.loc[index,'age'],self.df.loc[index,'psa']]).reshape(1,2)
 
         
         label = self.label_encoder.transform([self.df.loc[index,'grade']])[0]
 
-        return torch.unsqueeze(self.DataTransformer(image),0).float(), self.DataTransformer(features), label
+        return image , self.DataTransformer(features), label
     
     def image_preprocessor(self, image, curr_depth):
 
